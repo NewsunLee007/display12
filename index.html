@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>中考二模相对一模 综合报告看板</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:#f5f0eb;color:#333;padding:20px}
+.header{background:linear-gradient(135deg,#5B8C8C,#7A9E7E);color:#fff;padding:24px 32px;border-radius:12px;margin-bottom:20px}
+.header h1{font-size:22px;font-weight:700} .header p{font-size:13px;opacity:.85;margin-top:6px}
+.tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.tab{padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;background:#e8e3d7;color:#555;transition:all .2s;border:none}
+.tab.active{background:#5B8C8C;color:#fff} .tab:hover{background:#d4cfc3}
+.panel{display:none} .panel.active{display:block}
+.card{background:#fff;border-radius:10px;padding:20px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.card h3{font-size:15px;color:#5B8C8C;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #e8e3d7}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#5B8C8C;color:#fff;padding:6px 6px;text-align:center;font-weight:600;white-space:nowrap}
+td{padding:4px 6px;text-align:center;border-bottom:1px solid #eee}
+tr:hover{background:#f8f6f2}
+.badge{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;display:inline-block}
+.badge-up{background:#c5e0b4;color:#2d6a2d} .badge-down{background:#f4cccc;color:#b22222}
+.badge-flat{background:#fce8d0;color:#a67c00} .badge-deepup{background:#a9d18e;color:#1a4a1a}
+.badge-deepdown{background:#e06666;color:#fff}
+.filters{margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filters label{font-size:12px;color:#666}
+.filters select{padding:4px 8px;border-radius:4px;border:1px solid #ddd;font-size:12px;background:#fff}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.chart-box{background:#fff;border-radius:10px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.chart-box h4{font-size:13px;color:#5B8C8C;margin-bottom:8px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.kpi-card{background:#fff;border-radius:10px;padding:14px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.kpi-card .num{font-size:22px;font-weight:700;color:#5B8C8C}
+.kpi-card .label{font-size:11px;color:#999;margin-top:2px}
+@media(max-width:768px){.chart-grid{grid-template-columns:1fr}.kpi-grid{grid-template-columns:1fr 1fr}}
+</style></head><body>
+<div class="header"><h1>中考二模相对一模 综合报告看板</h1><p>综合评分诊断 · 前20%/后20% · Z分排名 · 校际对比</p></div>
+<div class="kpi-grid" id="kpiGrid"></div>
+<div class="tabs" id="tabBar"></div>
+<div id="panels"></div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+var DATA_CLS = [{"cls": "901班", "subj": "总分", "tch": "张广文", "y_avg": 527.060975609756, "e_avg": 545.5625, "ac": 18.5, "t20": -3.2, "b20_s": -10.7, "zc": -4.18, "score": 2.2, "tag": "持平"}, {"cls": "901班", "subj": "语文", "tch": "杨丽琴", "y_avg": 93.91463414634147, "e_avg": 99.39583333333333, "ac": 5.5, "t20": -9.5, "b20_s": -7.6, "zc": -4.1, "score": -16.9, "tag": "退步"}, {"cls": "901班", "subj": "数学", "tch": "陈银", "y_avg": 109.7560975609756, "e_avg": 107.41666666666667, "ac": -2.3, "t20": -6.0, "b20_s": -13.2, "zc": -5.93, "score": -28.4, "tag": "明显退步"}, {"cls": "901班", "subj": "英语", "tch": "张小慧", "y_avg": 111.26829268292683, "e_avg": 111.14583333333333, "ac": -0.1, "t20": 6.6, "b20_s": -7.3, "zc": -0.88, "score": -0.2, "tag": "持平"}, {"cls": "901班", "subj": "科学", "tch": "张广文", "y_avg": 137.85365853658536, "e_avg": 147.97916666666666, "ac": 10.1, "t20": -3.9, "b20_s": -8.3, "zc": -3.16, "score": -3.7, "tag": "持平"}, {"cls": "901班", "subj": "社会", "tch": "李阳静", "y_avg": 74.26829268292683, "e_avg": 79.625, "ac": 5.4, "t20": -0.4, "b20_s": -21.5, "zc": -7.12, "score": -18.5, "tag": "退步"}, {"cls": "902班", "subj": "总分", "tch": "陈银", "y_avg": 530.8194444444445, "e_avg": 553.2333333333333, "ac": 22.4, "t20": -11.7, "b20_s": 0.0, "zc": -1.21, "score": 5.7, "tag": "持平"}, {"cls": "902班", "subj": "语文", "tch": "杨丽琴", "y_avg": 94.22222222222223, "e_avg": 100.37777777777778, "ac": 6.2, "t20": 4.4, "b20_s": -5.6, "zc": 0.18, "score": 9.4, "tag": "进步"}, {"cls": "902班", "subj": "数学", "tch": "陈银", "y_avg": 111.77777777777777, "e_avg": 109.77777777777777, "ac": -2.0, "t20": -0.6, "b20_s": -8.3, "zc": -2.66, "score": -9.7, "tag": "退步"}, {"cls": "902班", "subj": "英语", "tch": "张小慧", "y_avg": 111.05555555555556, "e_avg": 111.84444444444445, "ac": 0.8, "t20": -15.0, "b20_s": -4.4, "zc": -3.12, "score": -24.6, "tag": "明显退步"}, {"cls": "902班", "subj": "科学", "tch": "张广文", "y_avg": 138.375, "e_avg": 149.65555555555557, "ac": 11.3, "t20": -25.0, "b20_s": 2.2, "zc": -2.97, "score": -17.6, "tag": "退步"}, {"cls": "902班", "subj": "社会", "tch": "李阳静", "y_avg": 75.38888888888889, "e_avg": 81.57777777777778, "ac": 6.2, "t20": -3.3, "b20_s": -1.7, "zc": -0.68, "score": -3.0, "tag": "持平"}, {"cls": "903班", "subj": "总分", "tch": "陈洪拿", "y_avg": 529.7553191489362, "e_avg": 547.2446808510638, "ac": 17.5, "t20": 0.0, "b20_s": -10.6, "zc": -3.69, "score": 4.1, "tag": "持平"}, {"cls": "903班", "subj": "语文", "tch": "黄剑平", "y_avg": 93.73404255319149, "e_avg": 98.56382978723404, "ac": 4.8, "t20": 10.6, "b20_s": -14.9, "zc": -3.12, "score": -0.5, "tag": "持平"}, {"cls": "903班", "subj": "数学", "tch": "陈洪拿", "y_avg": 109.46808510638297, "e_avg": 108.14893617021276, "ac": -1.3, "t20": -4.3, "b20_s": -10.6, "zc": -3.74, "score": -15.9, "tag": "退步"}, {"cls": "903班", "subj": "英语", "tch": "林一雅", "y_avg": 111.03191489361703, "e_avg": 110.73404255319149, "ac": -0.3, "t20": 6.4, "b20_s": -14.9, "zc": -3.41, "score": -5.3, "tag": "持平"}, {"cls": "903班", "subj": "科学", "tch": "冯为", "y_avg": 138.1595744680851, "e_avg": 146.90425531914894, "ac": 8.7, "t20": -6.4, "b20_s": -19.1, "zc": -8.13, "score": -20.7, "tag": "明显退步"}, {"cls": "903班", "subj": "社会", "tch": "冯格", "y_avg": 77.36170212765957, "e_avg": 82.8936170212766, "ac": 5.5, "t20": -6.4, "b20_s": -8.5, "zc": -3.71, "score": -9.9, "tag": "退步"}, {"cls": "904班", "subj": "总分", "tch": "冯为", "y_avg": 525.9358974358975, "e_avg": 544.525, "ac": 18.6, "t20": 4.7, "b20_s": -17.4, "zc": -4.63, "score": 6.4, "tag": "持平"}, {"cls": "904班", "subj": "语文", "tch": "黄剑平", "y_avg": 91.96153846153847, "e_avg": 97.0625, "ac": 5.1, "t20": -13.1, "b20_s": -9.6, "zc": -6.0, "score": -27.6, "tag": "明显退步"}, {"cls": "904班", "subj": "数学", "tch": "陈洪拿", "y_avg": 107.82051282051282, "e_avg": 106.7, "ac": -1.1, "t20": -3.0, "b20_s": -17.2, "zc": -5.53, "score": -22.8, "tag": "明显退步"}, {"cls": "904班", "subj": "英语", "tch": "林一雅", "y_avg": 110.7948717948718, "e_avg": 109.7875, "ac": -1.0, "t20": -15.6, "b20_s": -14.8, "zc": -8.69, "score": -41.6, "tag": "明显退步"}, {"cls": "904班", "subj": "科学", "tch": "冯为", "y_avg": 136.82051282051282, "e_avg": 146.725, "ac": 9.9, "t20": 9.7, "b20_s": -22.3, "zc": -5.18, "score": 0.3, "tag": "持平"}, {"cls": "904班", "subj": "社会", "tch": "罗婉莹", "y_avg": 78.53846153846153, "e_avg": 84.25, "ac": 5.7, "t20": -3.2, "b20_s": -4.9, "zc": -1.61, "score": -1.5, "tag": "持平"}, {"cls": "905班", "subj": "总分", "tch": "肖锐", "y_avg": 489.60227272727275, "e_avg": 506.9186046511628, "ac": 17.3, "t20": 5.1, "b20_s": 1.9, "zc": 1.77, "score": 25.9, "tag": "明显进步"}, {"cls": "905班", "subj": "语文", "tch": "肖锐", "y_avg": 88.79545454545455, "e_avg": 95.0, "ac": 6.2, "t20": -2.0, "b20_s": 8.8, "zc": 2.26, "score": 11.3, "tag": "进步"}, {"cls": "905班", "subj": "数学", "tch": "廖道新", "y_avg": 96.5, "e_avg": 96.72727272727273, "ac": 0.2, "t20": -2.3, "b20_s": 0.0, "zc": -1.16, "score": -2.9, "tag": "持平"}, {"cls": "905班", "subj": "英语", "tch": "钱雪扬", "y_avg": 98.19318181818181, "e_avg": 95.22727272727273, "ac": -3.0, "t20": -4.5, "b20_s": 4.5, "zc": 0.42, "score": -4.9, "tag": "持平"}, {"cls": "905班", "subj": "科学", "tch": "谢文刚", "y_avg": 131.47727272727272, "e_avg": 138.72727272727272, "ac": 7.2, "t20": 11.4, "b20_s": 2.3, "zc": 3.11, "score": 25.2, "tag": "明显进步"}, {"cls": "905班", "subj": "社会", "tch": "戴爱平", "y_avg": 74.63636363636364, "e_avg": 78.31818181818181, "ac": 3.7, "t20": -4.5, "b20_s": 2.3, "zc": -0.89, "score": -1.9, "tag": "持平"}, {"cls": "906班", "subj": "总分", "tch": "谢文刚", "y_avg": 493.28409090909093, "e_avg": 511.9, "ac": 18.6, "t20": 1.9, "b20_s": 7.2, "zc": 2.95, "score": 28.2, "tag": "明显进步"}, {"cls": "906班", "subj": "语文", "tch": "肖锐", "y_avg": 89.0, "e_avg": 94.55434782608695, "ac": 5.6, "t20": -5.0, "b20_s": 5.5, "zc": -0.06, "score": -2.1, "tag": "持平"}, {"cls": "906班", "subj": "数学", "tch": "廖道新", "y_avg": 95.86363636363636, "e_avg": 99.13333333333334, "ac": 3.3, "t20": 6.4, "b20_s": 0.6, "zc": 2.85, "score": 14.8, "tag": "进步"}, {"cls": "906班", "subj": "英语", "tch": "钱雪扬", "y_avg": 100.20454545454545, "e_avg": 97.3, "ac": -2.9, "t20": 8.4, "b20_s": 0.3, "zc": 1.63, "score": 10.3, "tag": "进步"}, {"cls": "906班", "subj": "科学", "tch": "谢文刚", "y_avg": 133.76136363636363, "e_avg": 141.44565217391303, "ac": 7.7, "t20": 1.6, "b20_s": 3.0, "zc": 1.44, "score": 11.9, "tag": "进步"}, {"cls": "906班", "subj": "社会", "tch": "戴爱平", "y_avg": 74.45454545454545, "e_avg": 78.88888888888889, "ac": 4.4, "t20": -2.7, "b20_s": 2.7, "zc": 0.22, "score": 3.7, "tag": "持平"}, {"cls": "907班", "subj": "总分", "tch": "郑一凡", "y_avg": 502.95652173913044, "e_avg": 515.0333333333333, "ac": 12.1, "t20": -1.7, "b20_s": -0.3, "zc": -1.03, "score": 8.9, "tag": "进步"}, {"cls": "907班", "subj": "语文", "tch": "程妞", "y_avg": 90.08695652173913, "e_avg": 96.2, "ac": 6.1, "t20": 13.7, "b20_s": -4.7, "zc": 1.42, "score": 25.3, "tag": "明显进步"}, {"cls": "907班", "subj": "数学", "tch": "朱文雅", "y_avg": 102.78260869565217, "e_avg": 101.71111111111111, "ac": -1.1, "t20": 0.4, "b20_s": -9.0, "zc": -2.82, "score": -8.1, "tag": "退步"}, {"cls": "907班", "subj": "英语", "tch": "徐梦慧", "y_avg": 99.22826086956522, "e_avg": 95.43333333333334, "ac": -3.8, "t20": -6.1, "b20_s": 1.8, "zc": -1.21, "score": -15.9, "tag": "退步"}, {"cls": "907班", "subj": "科学", "tch": "张孝梅", "y_avg": 134.20652173913044, "e_avg": 139.93333333333334, "ac": 5.7, "t20": 2.7, "b20_s": 4.1, "zc": 1.05, "score": 11.0, "tag": "进步"}, {"cls": "907班", "subj": "社会", "tch": "郑一凡", "y_avg": 76.65217391304348, "e_avg": 81.75555555555556, "ac": 5.1, "t20": -8.4, "b20_s": 4.2, "zc": -0.1, "score": -4.5, "tag": "持平"}, {"cls": "908班", "subj": "总分", "tch": "徐梦慧", "y_avg": 509.3125, "e_avg": 526.0921052631579, "ac": 16.8, "t20": 1.3, "b20_s": -2.9, "zc": -0.39, "score": 16.9, "tag": "进步"}, {"cls": "908班", "subj": "语文", "tch": "程妞", "y_avg": 89.425, "e_avg": 96.64473684210526, "ac": 7.2, "t20": 16.6, "b20_s": -3.3, "zc": 3.6, "score": 36.0, "tag": "明显进步"}, {"cls": "908班", "subj": "数学", "tch": "朱文雅", "y_avg": 104.1, "e_avg": 102.13157894736842, "ac": -2.0, "t20": 6.6, "b20_s": 2.1, "zc": 1.4, "score": 2.9, "tag": "持平"}, {"cls": "908班", "subj": "英语", "tch": "徐梦慧", "y_avg": 101.5625, "e_avg": 100.0, "ac": -1.6, "t20": 3.7, "b20_s": -0.4, "zc": 1.02, "score": 6.3, "tag": "持平"}, {"cls": "908班", "subj": "科学", "tch": "张孝梅", "y_avg": 137.8, "e_avg": 144.26315789473685, "ac": 6.5, "t20": -6.4, "b20_s": -3.0, "zc": -2.75, "score": -5.5, "tag": "持平"}, {"cls": "908班", "subj": "社会", "tch": "郑一凡", "y_avg": 76.425, "e_avg": 83.05263157894737, "ac": 6.6, "t20": 8.9, "b20_s": -0.4, "zc": 3.24, "score": 26.8, "tag": "明显进步"}, {"cls": "909班", "subj": "总分", "tch": "阿丽娜", "y_avg": 438.7674418604651, "e_avg": 459.48837209302326, "ac": 20.7, "t20": 4.7, "b20_s": -2.3, "zc": 0.45, "score": 22.8, "tag": "明显进步"}, {"cls": "909班", "subj": "语文", "tch": "阿丽娜", "y_avg": 85.53488372093024, "e_avg": 89.90697674418605, "ac": 4.4, "t20": -4.7, "b20_s": -4.7, "zc": -3.54, "score": -10.3, "tag": "退步"}, {"cls": "909班", "subj": "数学", "tch": "马雯雯", "y_avg": 86.46511627906976, "e_avg": 94.44186046511628, "ac": 8.0, "t20": 7.0, "b20_s": 4.7, "zc": 4.04, "score": 27.8, "tag": "明显进步"}, {"cls": "909班", "subj": "英语", "tch": "陈暴", "y_avg": 84.6046511627907, "e_avg": 83.0, "ac": -1.6, "t20": 2.3, "b20_s": 0.0, "zc": 1.01, "score": 3.6, "tag": "持平"}, {"cls": "909班", "subj": "科学", "tch": "白茹", "y_avg": 113.83720930232558, "e_avg": 120.79069767441861, "ac": 7.0, "t20": -11.6, "b20_s": 0.0, "zc": -2.3, "score": -10.8, "tag": "退步"}, {"cls": "909班", "subj": "社会", "tch": "周利静", "y_avg": 68.32558139534883, "e_avg": 71.34883720930233, "ac": 3.0, "t20": 0.0, "b20_s": -2.3, "zc": -1.34, "score": -2.2, "tag": "持平"}, {"cls": "910班", "subj": "总分", "tch": "马雯雯", "y_avg": 430.1931818181818, "e_avg": 452.6707317073171, "ac": 22.5, "t20": 1.3, "b20_s": 1.1, "zc": 0.99, "score": 24.0, "tag": "明显进步"}, {"cls": "910班", "subj": "语文", "tch": "阿丽娜", "y_avg": 83.92045454545455, "e_avg": 88.6829268292683, "ac": 4.8, "t20": -3.7, "b20_s": -3.6, "zc": -2.67, "score": -8.1, "tag": "退步"}, {"cls": "910班", "subj": "数学", "tch": "马雯雯", "y_avg": 87.52272727272727, "e_avg": 92.85365853658537, "ac": 5.3, "t20": -3.4, "b20_s": -1.3, "zc": -0.96, "score": -1.6, "tag": "持平"}, {"cls": "910班", "subj": "英语", "tch": "陈暴", "y_avg": 77.57954545454545, "e_avg": 76.1829268292683, "ac": -1.4, "t20": 10.8, "b20_s": -1.7, "zc": 2.19, "score": 13.4, "tag": "进步"}, {"cls": "910班", "subj": "科学", "tch": "项碎芬", "y_avg": 115.30681818181819, "e_avg": 124.02439024390245, "ac": 8.7, "t20": -0.8, "b20_s": 8.3, "zc": 2.81, "score": 18.5, "tag": "进步"}, {"cls": "910班", "subj": "社会", "tch": "周利静", "y_avg": 65.86363636363636, "e_avg": 70.92682926829268, "ac": 5.1, "t20": -3.7, "b20_s": 3.0, "zc": 1.04, "score": 6.0, "tag": "持平"}, {"cls": "911班", "subj": "总分", "tch": "鞠烨", "y_avg": 412.8255813953488, "e_avg": 430.42857142857144, "ac": 17.6, "t20": -2.1, "b20_s": 1.7, "zc": -0.07, "score": 16.4, "tag": "进步"}, {"cls": "911班", "subj": "语文", "tch": "林晓乐", "y_avg": 81.68181818181819, "e_avg": 88.58333333333333, "ac": 6.9, "t20": -6.2, "b20_s": 8.0, "zc": 2.2, "score": 7.6, "tag": "持平"}, {"cls": "911班", "subj": "数学", "tch": "吴子健", "y_avg": 81.3953488372093, "e_avg": 87.80952380952381, "ac": 6.4, "t20": 0.3, "b20_s": -5.3, "zc": -1.62, "score": 2.5, "tag": "持平"}, {"cls": "911班", "subj": "英语", "tch": "曹琦", "y_avg": 78.37209302325581, "e_avg": 73.57142857142857, "ac": -4.8, "t20": -9.0, "b20_s": 1.8, "zc": -1.94, "score": -15.1, "tag": "退步"}, {"cls": "911班", "subj": "科学", "tch": "鞠烨", "y_avg": 104.93181818181819, "e_avg": 111.51190476190476, "ac": 6.6, "t20": 0.4, "b20_s": 3.4, "zc": 1.26, "score": 10.9, "tag": "进步"}, {"cls": "911班", "subj": "社会", "tch": "罗婉莹", "y_avg": 66.4186046511628, "e_avg": 68.95238095238095, "ac": 2.5, "t20": 0.4, "b20_s": -3.2, "zc": -1.61, "score": -2.5, "tag": "持平"}, {"cls": "912班", "subj": "总分", "tch": "冯格", "y_avg": 438.45348837209303, "e_avg": 452.06976744186045, "ac": 13.6, "t20": -7.0, "b20_s": -4.7, "zc": -3.33, "score": 0.2, "tag": "持平"}, {"cls": "912班", "subj": "语文", "tch": "林晓乐", "y_avg": 85.1046511627907, "e_avg": 91.23863636363636, "ac": 6.1, "t20": 8.6, "b20_s": 2.6, "zc": 2.8, "score": 20.4, "tag": "明显进步"}, {"cls": "912班", "subj": "数学", "tch": "吴子健", "y_avg": 83.86363636363636, "e_avg": 90.6046511627907, "ac": 6.7, "t20": -1.8, "b20_s": 4.1, "zc": 1.21, "score": 7.4, "tag": "持平"}, {"cls": "912班", "subj": "英语", "tch": "曹琦", "y_avg": 80.94318181818181, "e_avg": 75.72727272727273, "ac": -5.2, "t20": -6.8, "b20_s": -2.3, "zc": -2.85, "score": -20.5, "tag": "明显退步"}, {"cls": "912班", "subj": "科学", "tch": "项碎芬", "y_avg": 117.4186046511628, "e_avg": 121.80681818181819, "ac": 4.4, "t20": -0.5, "b20_s": -1.8, "zc": -1.45, "score": 1.0, "tag": "持平"}, {"cls": "912班", "subj": "社会", "tch": "冯格", "y_avg": 69.0, "e_avg": 71.72727272727273, "ac": 2.7, "t20": -4.5, "b20_s": -4.5, "zc": -3.17, "score": -7.5, "tag": "持平"}, {"cls": "913班", "subj": "总分", "tch": "蔡明敏", "y_avg": 432.45238095238096, "e_avg": 454.1904761904762, "ac": 21.7, "t20": 2.4, "b20_s": -4.8, "zc": -0.63, "score": 18.3, "tag": "进步"}, {"cls": "913班", "subj": "语文", "tch": "张雯", "y_avg": 83.4761904761905, "e_avg": 90.20238095238095, "ac": 6.7, "t20": 7.1, "b20_s": 0.0, "zc": 2.27, "score": 20.4, "tag": "明显进步"}, {"cls": "913班", "subj": "数学", "tch": "蔡明敏", "y_avg": 92.42857142857143, "e_avg": 94.92857142857143, "ac": 2.5, "t20": -11.9, "b20_s": -2.4, "zc": -3.75, "score": -19.1, "tag": "退步"}, {"cls": "913班", "subj": "英语", "tch": "邱花", "y_avg": 76.16666666666667, "e_avg": 75.83333333333333, "ac": -0.3, "t20": 0.0, "b20_s": 0.0, "zc": 0.91, "score": 1.7, "tag": "持平"}, {"cls": "913班", "subj": "科学", "tch": "鞠烨", "y_avg": 112.66666666666667, "e_avg": 119.13095238095238, "ac": 6.5, "t20": 0.0, "b20_s": 0.0, "zc": -0.08, "score": 5.4, "tag": "持平"}, {"cls": "913班", "subj": "社会", "tch": "陈芳芳", "y_avg": 67.71428571428571, "e_avg": 74.0952380952381, "ac": 6.4, "t20": 0.0, "b20_s": 7.1, "zc": 3.62, "score": 13.9, "tag": "进步"}, {"cls": "914班", "subj": "总分", "tch": "陈芳芳", "y_avg": 439.6190476190476, "e_avg": 455.5952380952381, "ac": 16.0, "t20": 2.4, "b20_s": 2.4, "zc": 0.9, "score": 20.2, "tag": "明显进步"}, {"cls": "914班", "subj": "语文", "tch": "张雯", "y_avg": 84.07142857142857, "e_avg": 89.53571428571429, "ac": 5.5, "t20": 2.4, "b20_s": 0.0, "zc": 0.23, "score": 12.0, "tag": "进步"}, {"cls": "914班", "subj": "数学", "tch": "蔡明敏", "y_avg": 87.42857142857143, "e_avg": 90.28571428571429, "ac": 2.9, "t20": -7.1, "b20_s": -7.1, "zc": -4.63, "score": -13.2, "tag": "退步"}, {"cls": "914班", "subj": "英语", "tch": "邱花", "y_avg": 80.32142857142857, "e_avg": 75.85714285714286, "ac": -4.5, "t20": 0.0, "b20_s": -4.8, "zc": -1.97, "score": -10.0, "tag": "退步"}, {"cls": "914班", "subj": "科学", "tch": "白茹", "y_avg": 114.72619047619048, "e_avg": 122.17857142857143, "ac": 7.5, "t20": 0.0, "b20_s": 0.0, "zc": 0.14, "score": 8.9, "tag": "进步"}, {"cls": "914班", "subj": "社会", "tch": "陈芳芳", "y_avg": 73.07142857142857, "e_avg": 77.73809523809524, "ac": 4.7, "t20": -7.1, "b20_s": -4.8, "zc": -3.0, "score": -9.4, "tag": "退步"}, {"cls": "915班", "subj": "总分", "tch": "许金峰", "y_avg": 498.5, "e_avg": 511.65, "ac": 13.1, "t20": -2.7, "b20_s": -7.3, "zc": -3.17, "score": 1.5, "tag": "持平"}, {"cls": "915班", "subj": "语文", "tch": "黄春燕", "y_avg": 90.0909090909091, "e_avg": 94.7, "ac": 4.6, "t20": -21.4, "b20_s": 7.7, "zc": -3.59, "score": -24.0, "tag": "明显退步"}, {"cls": "915班", "subj": "数学", "tch": "叶华", "y_avg": 102.95454545454545, "e_avg": 102.05, "ac": -0.9, "t20": -21.4, "b20_s": 8.6, "zc": -1.71, "score": -26.9, "tag": "明显退步"}, {"cls": "915班", "subj": "英语", "tch": "许金峰", "y_avg": 97.97727272727273, "e_avg": 97.225, "ac": -0.8, "t20": 21.4, "b20_s": 2.3, "zc": 6.02, "score": 34.1, "tag": "明显进步"}, {"cls": "915班", "subj": "科学", "tch": "段隆发", "y_avg": 131.79545454545453, "e_avg": 139.325, "ac": 7.5, "t20": -2.3, "b20_s": -6.8, "zc": -2.23, "score": 2.6, "tag": "持平"}, {"cls": "915班", "subj": "社会", "tch": "孙镱轩", "y_avg": 75.68181818181819, "e_avg": 78.35, "ac": 2.7, "t20": -16.8, "b20_s": 7.7, "zc": -2.61, "score": -21.2, "tag": "明显退步"}, {"cls": "916班", "subj": "总分", "tch": "段隆发", "y_avg": 492.84, "e_avg": 509.94, "ac": 17.1, "t20": 0.0, "b20_s": 12.0, "zc": 3.77, "score": 31.2, "tag": "明显进步"}, {"cls": "916班", "subj": "语文", "tch": "黄春燕", "y_avg": 90.98, "e_avg": 97.4, "ac": 6.4, "t20": 4.0, "b20_s": 12.0, "zc": 4.99, "score": 24.6, "tag": "明显进步"}, {"cls": "916班", "subj": "数学", "tch": "叶华", "y_avg": 100.2, "e_avg": 100.68, "ac": 0.5, "t20": 0.0, "b20_s": 12.0, "zc": 3.95, "score": 12.9, "tag": "进步"}, {"cls": "916班", "subj": "英语", "tch": "许金峰", "y_avg": 96.26, "e_avg": 92.7, "ac": -3.6, "t20": -4.0, "b20_s": 8.0, "zc": 1.42, "score": -1.4, "tag": "持平"}, {"cls": "916班", "subj": "科学", "tch": "段隆发", "y_avg": 130.88, "e_avg": 140.52, "ac": 9.6, "t20": 12.0, "b20_s": 0.0, "zc": 3.71, "score": 30.1, "tag": "明显进步"}, {"cls": "916班", "subj": "社会", "tch": "孙镱轩", "y_avg": 74.52, "e_avg": 78.64, "ac": 4.1, "t20": -4.0, "b20_s": 0.0, "zc": -1.1, "score": -1.0, "tag": "持平"}];
+var DATA_GRP = [{"grp": "全年级", "subj": "总分", "y_t20": 20.9, "e_t20": 20.6, "y_b20": 15.9, "e_b20": 18.2}, {"grp": "全年级", "subj": "语文", "y_t20": 19.9, "e_t20": 20.7, "y_b20": 16.5, "e_b20": 17.5}, {"grp": "全年级", "subj": "数学", "y_t20": 22.3, "e_t20": 20.3, "y_b20": 15.9, "e_b20": 19.2}, {"grp": "全年级", "subj": "英语", "y_t20": 20.7, "e_t20": 20.1, "y_b20": 16.0, "e_b20": 18.3}, {"grp": "全年级", "subj": "科学", "y_t20": 20.7, "e_t20": 19.3, "y_b20": 17.0, "e_b20": 19.2}, {"grp": "全年级", "subj": "社会", "y_t20": 22.7, "e_t20": 19.5, "y_b20": 15.7, "e_b20": 17.7}, {"grp": "火箭班", "subj": "总分", "y_t20": 20.3, "e_t20": 19.8, "y_b20": 14.0, "e_b20": 15.8}, {"grp": "火箭班", "subj": "语文", "y_t20": 18.7, "e_t20": 19.7, "y_b20": 14.6, "e_b20": 15.5}, {"grp": "火箭班", "subj": "数学", "y_t20": 20.3, "e_t20": 20.6, "y_b20": 13.7, "e_b20": 18.5}, {"grp": "火箭班", "subj": "英语", "y_t20": 21.0, "e_t20": 17.9, "y_b20": 13.7, "e_b20": 15.5}, {"grp": "火箭班", "subj": "科学", "y_t20": 20.6, "e_t20": 20.5, "y_b20": 14.9, "e_b20": 17.5}, {"grp": "火箭班", "subj": "社会", "y_t20": 21.3, "e_t20": 18.8, "y_b20": 13.3, "e_b20": 16.1}, {"grp": "高中直升", "subj": "总分", "y_t20": 21.7, "e_t20": 21.0, "y_b20": 12.3, "e_b20": 17.2}, {"grp": "高中直升", "subj": "语文", "y_t20": 20.1, "e_t20": 21.0, "y_b20": 12.8, "e_b20": 16.9}, {"grp": "高中直升", "subj": "数学", "y_t20": 23.7, "e_t20": 20.9, "y_b20": 12.0, "e_b20": 18.2}, {"grp": "高中直升", "subj": "英语", "y_t20": 20.6, "e_t20": 20.4, "y_b20": 14.5, "e_b20": 18.5}, {"grp": "高中直升", "subj": "科学", "y_t20": 22.8, "e_t20": 20.7, "y_b20": 13.1, "e_b20": 17.7}, {"grp": "高中直升", "subj": "社会", "y_t20": 22.6, "e_t20": 18.8, "y_b20": 13.4, "e_b20": 16.3}];
+var DATA_INTER = [{"subj": "总分", "y_avg": 477.5, "e_avg": 496.2, "ac": 18.7, "y_rank": 5, "e_rank": 5, "rc": 0, "y_std": 77.74, "e_std": 78.13, "y_z": 73.44, "e_z": 74.19, "zc": 0.75, "y_zrk": 5, "e_zrk": 5, "zrc": 0, "y_t20": 26.2, "e_t20": 29.5, "y_t40": 62.6, "e_t40": 62.5, "y_b20": 2.3, "e_b20": 2.7, "b20_s": -0.4}, {"subj": "语文", "y_avg": 88.2, "e_avg": 94.1, "ac": 5.9, "y_rank": 6, "e_rank": 4, "rc": 2, "y_std": 75.1, "e_std": 76.97, "y_z": 70.03, "e_z": 73.5, "zc": 3.47, "y_zrk": 6, "e_zrk": 4, "zrc": 2, "y_t20": 17.6, "e_t20": 28.5, "y_t40": 46.8, "e_t40": 61.7, "y_b20": 3.9, "e_b20": 3.2, "b20_s": 0.7}, {"subj": "数学", "y_avg": 96.9, "e_avg": 98.8, "ac": 1.9, "y_rank": 5, "e_rank": 4, "rc": 1, "y_std": 0.0, "e_std": 77.78, "y_z": 74.03, "e_z": 74.4, "zc": 0.37, "y_zrk": 5, "e_zrk": 5, "zrc": 0, "y_t20": 29.1, "e_t20": 31.6, "y_t40": 61.4, "e_t40": 59.8, "y_b20": 3.1, "e_b20": 2.7, "b20_s": 0.4}, {"subj": "英语", "y_avg": 94.2, "e_avg": 92.5, "ac": -1.7, "y_rank": 5, "e_rank": 5, "rc": 0, "y_std": 77.23, "e_std": 77.13, "y_z": 73.28, "e_z": 73.28, "zc": 0.0, "y_zrk": 5, "e_zrk": 5, "zrc": 0, "y_t20": 29.9, "e_t20": 29.4, "y_t40": 58.9, "e_t40": 58.8, "y_b20": 4.2, "e_b20": 4.2, "b20_s": -0.0}, {"subj": "科学", "y_avg": 126.2, "e_avg": 134.1, "ac": 7.9, "y_rank": 6, "e_rank": 5, "rc": 1, "y_std": 77.7, "e_std": 77.64, "y_z": 73.37, "e_z": 73.09, "zc": -0.28, "y_zrk": 6, "e_zrk": 6, "zrc": 0, "y_t20": 25.5, "e_t20": 27.8, "y_t40": 62.4, "e_t40": 60.8, "y_b20": 2.9, "e_b20": 4.7, "b20_s": -1.7}, {"subj": "社会", "y_avg": 72.8, "e_avg": 77.4, "ac": 4.6, "y_rank": 6, "e_rank": 3, "rc": 3, "y_std": 76.67, "e_std": 78.23, "y_z": 72.33, "e_z": 74.01, "zc": 1.68, "y_zrk": 6, "e_zrk": 4, "zrc": 2, "y_t20": 24.3, "e_t20": 28.0, "y_t40": 54.3, "e_t40": 63.9, "y_b20": 2.3, "e_b20": 2.4, "b20_s": -0.1}];
+var SUBJ = ['总分','语文','数学','英语','科学','社会'];
+var DISP_SUBJ = ['语文','数学','英语','科学','社会','总分'];
+document.addEventListener('DOMContentLoaded',function(){
+  initKPI(); initTabs(); renderTab1(); renderTab2(); renderTab3(); renderTab4(); renderTab5();
+  setTimeout(initCharts,200);
+});
+function initKPI(){
+  var html='';
+  var totals=DATA_CLS.filter(function(x){return x.subj==='总分';});
+  if(totals.length){
+    var avgAc=totals.reduce(function(a,x){return a+x.ac},0)/totals.length;
+    var avgT20=totals.reduce(function(a,x){return a+x.t20},0)/totals.length;
+    var avgB20=totals.reduce(function(a,x){return a+x.b20_s},0)/totals.length;
+    html+='<div class="kpi-card"><div class="num" style="color:'+(avgAc>=0?'#5B8C8C':'#b22222')+'">'+(avgAc>0?'+':'')+avgAc.toFixed(1)+'</div><div class="label">总分均分变化</div></div>';
+    html+='<div class="kpi-card"><div class="num" style="color:'+(avgT20>=0?'#5B8C8C':'#b22222')+'">'+(avgT20>0?'+':'')+avgT20.toFixed(1)+'%</div><div class="label">总分前20%变化</div></div>';
+    html+='<div class="kpi-card"><div class="num" style="color:'+(avgB20>=0?'#5B8C8C':'#b22222')+'">'+(avgB20>0?'+':'')+avgB20.toFixed(1)+'%</div><div class="label">总分后20%缩减</div></div>';
+  }
+  SUBJ.forEach(function(s){
+    if(s==='总分') return;
+    var d=DATA_CLS.filter(function(x){return x.subj===s});
+    if(!d.length) return;
+    var ac=d.reduce(function(a,x){return a+x.ac},0)/d.length;
+    var t20=d.reduce(function(a,x){return a+x.t20},0)/d.length;
+    html+='<div class="kpi-card"><div class="num" style="color:'+(ac>=0?'#5B8C8C':'#b22222')+'">'+(ac>0?'+':'')+ac.toFixed(1)+'</div><div class="label">'+s+'均分</div></div>';
+  });
+  document.getElementById('kpiGrid').innerHTML=html;
+}
+function tagBadge(tag){
+  var m={'明显进步':'badge badge-deepup','进步':'badge badge-up','持平':'badge badge-flat','退步':'badge badge-down','明显退步':'badge badge-deepdown'};
+  return '<span class="'+(m[tag]||'badge badge-flat')+'">'+tag+'</span>';
+}
+function initTabs(){
+  var names=['班级诊断','多维明细','群体对比','校际对比','图表分析'];
+  var bar=document.getElementById('tabBar');
+  bar.innerHTML=names.map(function(n,i){return '<button class="tab'+(i===0?' active':'')+'" data-idx="'+i+'">'+n+'</button>';}).join('');
+  document.getElementById('panels').innerHTML=names.map(function(n,i){return '<div class="panel'+(i===0?' active':'')+'" id="p'+i+'"></div>';}).join('');
+  bar.addEventListener('click',function(e){
+    if(!e.target.classList.contains('tab')) return;
+    document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+    e.target.classList.add('active');
+    document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+    document.getElementById('p'+e.target.dataset.idx).classList.add('active');
+  });
+}
+function renderTab1(){
+  var classes=[...new Set(DATA_CLS.map(function(d){return d.cls;}))].sort();
+  var html='<div class="card"><h3>班级学科进退步诊断</h3>';
+  html+='<div class="filters"><label>班级：</label><select id="f1c" onchange="filterT1()"><option value="">全部</option>';
+  classes.forEach(function(c){html+='<option value="'+c+'">'+c+'</option>';});
+  html+='</select><label>诊断：</label><select id="f1t" onchange="filterT1()"><option value="">全部</option><option value="up">进步</option><option value="down">退步</option><option value="flat">持平</option></select></div>';
+  html+='<div style="overflow-x:auto"><table><thead><tr><th>班级</th><th>语文</th><th>数学</th><th>英语</th><th>科学</th><th>社会</th><th>总分</th><th>进步</th><th>关注</th></tr></thead><tbody id="t1b"></tbody></table></div></div>';
+  document.getElementById('p0').innerHTML=html; filterT1();
+}
+function filterT1(){
+  var fc=document.getElementById('f1c').value;
+  var ft=document.getElementById('f1t').value;
+  var cmap={};
+  DATA_CLS.forEach(function(d){
+    if(fc && d.cls!==fc) return;
+    if(ft==='up' && d.tag.indexOf('进步')===-1) return;
+    if(ft==='down' && d.tag.indexOf('退步')===-1) return;
+    if(ft==='flat' && (d.tag.indexOf('进步')!==-1||d.tag.indexOf('退步')!==-1)) return;
+    if(!cmap[d.cls]) cmap[d.cls]={cls:d.cls,subjs:{},prog:[],regr:[]};
+    cmap[d.cls].subjs[d.subj]=d;
+    if(d.tag.indexOf('进步')!==-1) cmap[d.cls].prog.push(d.subj);
+    if(d.tag.indexOf('退步')!==-1) cmap[d.cls].regr.push(d.subj);
+  });
+  var rows='';
+  Object.values(cmap).sort(function(a,b){return a.cls.localeCompare(b.cls);}).forEach(function(c){
+    rows+='<tr><td><b>'+c.cls+'</b></td>';
+    DISP_SUBJ.forEach(function(s){
+      var d=c.subjs[s];
+      if(!d){rows+='<td>—</td>';return;}
+      rows+='<td>'+tagBadge(d.tag)+'<br><small style="color:'+(d.ac>=0?'#2d6a2d':'#b22222')+'">均'+(d.ac>0?'+':'')+d.ac.toFixed(1)+'</small></td>';
+    });
+    rows+='<td>'+(c.prog.length?c.prog.join('/'):'—')+'</td>';
+    rows+='<td>'+(c.regr.length?'<span style="color:#b22222">'+c.regr.join('/')+'</span>':'—')+'</td></tr>';
+  });
+  document.getElementById('t1b').innerHTML=rows;
+}
+function renderTab2(){
+  var classes=[...new Set(DATA_CLS.map(function(d){return d.cls;}))].sort();
+  var html='<div class="card"><h3>班级学科多维明细</h3>';
+  html+='<div class="filters"><label>班级：</label><select id="f2c" onchange="filterT2()"><option value="">全部</option>';
+  classes.forEach(function(c){html+='<option value="'+c+'">'+c+'</option>';});
+  html+='</select><label>学科：</label><select id="f2s" onchange="filterT2()"><option value="">全部</option>';
+  SUBJ.forEach(function(s){html+='<option value="'+s+'">'+s+'</option>';});
+  html+='</select></div><div style="overflow-x:auto"><table><thead><tr><th>班级</th><th>学科</th><th>均分变化</th><th>前20%变化</th><th>后20%缩减</th><th>Z分变化</th><th>综合评分</th><th>诊断</th></tr></thead><tbody id="t2b"></tbody></table></div></div>';
+  document.getElementById('p1').innerHTML=html; filterT2();
+}
+function filterT2(){
+  var fc=document.getElementById('f2c').value;
+  var fs=document.getElementById('f2s').value;
+  var data=DATA_CLS;
+  if(fc) data=data.filter(function(d){return d.cls===fc;});
+  if(fs) data=data.filter(function(d){return d.subj===fs;});
+  data.sort(function(a,b){return a.cls.localeCompare(b.cls)||SUBJ.indexOf(a.subj)-SUBJ.indexOf(b.subj);});
+  document.getElementById('t2b').innerHTML=data.map(function(d){
+    return '<tr><td>'+d.cls+'</td><td>'+d.subj+'</td><td style="color:'+(d.ac>=0?'#2d6a2d':'#b22222')+'">'+(d.ac>0?'+':'')+d.ac.toFixed(1)+'</td><td style="color:'+(d.t20>=0?'#2d6a2d':'#b22222')+'">'+(d.t20>0?'+':'')+d.t20.toFixed(1)+'%</td><td style="color:'+(d.b20_s>=0?'#2d6a2d':'#b22222')+'">'+(d.b20_s>0?'+':'')+d.b20_s.toFixed(1)+'%</td><td>'+(d.zc>0?'+':'')+d.zc.toFixed(2)+'</td><td><b>'+d.score+'</b></td><td>'+tagBadge(d.tag)+'</td></tr>';
+  }).join('');
+}
+function renderTab3(){
+  var html='<div class="card"><h3>特殊群体对比</h3>';
+  html+='<div class="filters"><label>群体：</label><select id="f3g" onchange="filterT3()"><option value="">全部</option><option value="全年级">全年级</option><option value="火箭班">火箭班</option><option value="高中直升">高中直升</option></select></div>';
+  html+='<div style="overflow-x:auto"><table><thead><tr><th>群体</th><th>学科</th><th>一模前20%</th><th>二模前20%</th><th>前20%变化</th><th>后20%变化</th></tr></thead><tbody id="t3b"></tbody></table></div></div>';
+  document.getElementById('p2').innerHTML=html; filterT3();
+}
+function filterT3(){
+  var fg=document.getElementById('f3g').value;
+  var data=DATA_GRP;
+  if(fg) data=data.filter(function(d){return d.grp===fg;});
+  document.getElementById('t3b').innerHTML=data.map(function(d){
+    var t20c=d.e_t20-d.y_t20;var b20c=d.e_b20-d.y_b20;
+    return '<tr><td><b>'+d.grp+'</b></td><td>'+d.subj+'</td><td>'+d.y_t20+'%</td><td>'+d.e_t20+'%</td><td style="color:'+(t20c>=0?'#2d6a2d':'#b22222')+'">'+(t20c>0?'+':'')+t20c.toFixed(1)+'%</td><td style="color:'+(b20c<=0?'#2d6a2d':'#b22222')+'">'+d.y_b20+'%→'+d.e_b20+'%</td></tr>';
+  }).join('');
+}
+function renderTab4(){
+  var html='<div class="card"><h3>新纪元学校各学科校际对比（完整数据）</h3>';
+  html+='<div style="overflow-x:auto"><table><thead><tr><th rowspan="2">学科</th><th colspan="3">平均分</th><th colspan="3">排名</th><th colspan="3">标准分</th><th colspan="3">Z分排名</th><th colspan="3">前20%比例</th><th colspan="3">前40%比例</th><th colspan="3">后20%比例</th></tr><tr>';
+  html+='<th>一模</th><th>二模</th><th>变化</th><th>一模</th><th>二模</th><th>变化</th><th>一模</th><th>二模</th><th>变化</th><th>一模</th><th>二模</th><th>变化</th><th>一模</th><th>二模</th><th>变化</th><th>一模</th><th>二模</th><th>变化</th><th>一模</th><th>二模</th><th>缩减</th></tr></thead><tbody id="t4b"></tbody></table></div></div>';
+  document.getElementById('p3').innerHTML=html;
+  document.getElementById('t4b').innerHTML=DATA_INTER.map(function(d){
+    return '<tr><td><b>'+d.subj+'</b></td>'+
+      '<td>'+d.y_avg+'</td><td>'+d.e_avg+'</td><td style="color:'+(d.ac>=0?'#2d6a2d':'#b22222')+'">'+(d.ac>0?'+':'')+d.ac.toFixed(1)+'</td>'+
+      '<td>'+d.y_rank+'</td><td>'+d.e_rank+'</td><td style="color:'+(d.rc>=0?'#2d6a2d':'#b22222')+'">'+(d.rc>0?'+':'')+d.rc+'</td>'+
+      '<td>'+d.y_std+'</td><td>'+d.e_std+'</td><td style="color:'+(d.y_std<=d.e_std?'#2d6a2d':'#b22222')+'">'+(d.e_std-d.y_std>0?'+':'')+(d.e_std-d.y_std).toFixed(2)+'</td>'+
+      '<td>'+d.y_zrk+'</td><td>'+d.e_zrk+'</td><td style="color:'+(d.zrc>=0?'#2d6a2d':'#b22222')+'">'+(d.zrc>0?'+':'')+d.zrc+'</td>'+
+      '<td>'+d.y_t20+'%</td><td>'+d.e_t20+'%</td><td style="color:'+(d.e_t20>=d.y_t20?'#2d6a2d':'#b22222')+'">'+(d.e_t20-d.y_t20>0?'+':'')+(d.e_t20-d.y_t20).toFixed(1)+'%</td>'+
+      '<td>'+d.y_t40+'%</td><td>'+d.e_t40+'%</td><td style="color:'+(d.e_t40>=d.y_t40?'#2d6a2d':'#b22222')+'">'+(d.e_t40-d.y_t40>0?'+':'')+(d.e_t40-d.y_t40).toFixed(1)+'%</td>'+
+      '<td>'+d.y_b20+'%</td><td>'+d.e_b20+'%</td><td style="color:'+(d.b20_s>=0?'#2d6a2d':'#b22222')+'">'+(d.b20_s>0?'+':'')+d.b20_s.toFixed(1)+'%</td></tr>';
+  }).join('');
+}
+function renderTab5(){
+  document.getElementById('p4').innerHTML='<div class="card"><h3>图表分析</h3><div class="chart-grid"><div class="chart-box"><h4>各学科均分变化</h4><canvas id="ch1"></canvas></div><div class="chart-box"><h4>各班总分前20%变化</h4><canvas id="ch2"></canvas></div><div class="chart-box"><h4>三大群体前20%</h4><canvas id="ch3"></canvas></div><div class="chart-box"><h4>校际Z分排名变化</h4><canvas id="ch4"></canvas></div></div></div>';
+}
+var charts={};
+function initCharts(){
+  Object.values(charts).forEach(function(c){try{c.destroy()}catch(e){}});
+  var ac=SUBJ.map(function(s){var d=DATA_CLS.filter(function(x){return x.subj===s});return d.length?d.reduce(function(a,x){return a+x.ac},0)/d.length:0;});
+  charts.ch1=new Chart(document.getElementById('ch1'),{type:'bar',data:{labels:SUBJ,datasets:[{label:'均分变化',data:ac,backgroundColor:ac.map(function(v){return v>=0?'rgba(91,140,140,0.7)':'rgba(212,165,165,0.7)';}),borderColor:ac.map(function(v){return v>=0?'#5B8C8C':'#D4A5A5';}),borderWidth:2}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{grid:{color:'#eee'}}}}});
+  var clses=[...new Set(DATA_CLS.filter(function(d){return d.subj==='总分';}).map(function(d){return d.cls;}))].sort();
+  var t20=clses.map(function(c){var d=DATA_CLS.find(function(x){return x.cls===c&&x.subj==='总分';});return d?d.t20:0;});
+  charts.ch2=new Chart(document.getElementById('ch2'),{type:'bar',data:{labels:clses,datasets:[{label:'前20%变化',data:t20,backgroundColor:t20.map(function(v){return v>=0?'rgba(91,140,140,0.7)':'rgba(212,165,165,0.7)';}),borderWidth:1}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{grid:{color:'#eee'}}}}});
+  var grps=['全年级','火箭班','高中直升'];
+  var gt20=grps.map(function(g){var d=DATA_GRP.filter(function(x){return x.grp===g&&x.subj==='总分';});return d.length?{y:d[0].y_t20,e:d[0].e_t20}:{y:0,e:0};});
+  charts.ch3=new Chart(document.getElementById('ch3'),{type:'bar',data:{labels:grps,datasets:[{label:'一模前20%',data:gt20.map(function(d){return d.y;}),backgroundColor:'rgba(91,140,140,0.5)'},{label:'二模前20%',data:gt20.map(function(d){return d.e;}),backgroundColor:'rgba(91,140,140,0.9)'}]},options:{responsive:true,plugins:{legend:{position:'bottom'}},scales:{y:{grid:{color:'#eee'}}}}});
+  var isj=DATA_INTER.map(function(d){return d.subj;});
+  var zrk=DATA_INTER.map(function(d){return d.y_zrk-d.e_zrk;});
+  charts.ch4=new Chart(document.getElementById('ch4'),{type:'bar',data:{labels:isj,datasets:[{label:'Z分排名变化(正=进步)',data:zrk,backgroundColor:zrk.map(function(v){return v>=0?'rgba(91,140,140,0.7)':'rgba(212,165,165,0.7)';}),borderWidth:1}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{grid:{color:'#eee'}}}}});
+}
+</script></body></html>
